@@ -4,6 +4,35 @@ All notable changes to `phil/ai-bundle` will be documented in this file.
 
 Updates should follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles.
 
+## 0.1.1-alpha - 2026-11-24
+
+### Added
+
+- `Application\TaskDefinition::maxOutputTokens()`, the task's option `max_tokens`, or its reserve; the cost bound of a
+  task, the model's price of its reserve read and of its largest answer written, plus the price per call, reserved on
+  the budget and the ceiling.
+- The option `phil_ai.quota.concurrency`: how many tasks of one subject run at once, through a semaphore of
+  `symfony/semaphore` — suggested, off by default — whose factory `phil_ai.quota.semaphore_factory` names;
+  `Application\Quota::enter()` and `Application\Exception\TooManyTasks`.
+
+### Changed
+
+- The development requirements accept `phil/privacy-bundle` 0.3, the minor version of its main branch and no earlier
+  one, so that the package installs on its own beside that bundle.
+- Requires the latest minor of each dependency (`doctrine/orm` 3.8, `doctrine/collections` 3.1,
+  `symfony/http-client-contracts` 3.8, `symfony/translation-contracts` 3.8), and of each development requirement
+  (`doctrine/dbal` 4.6, `doctrine/doctrine-bundle` 3.4).
+
+### Security
+
+- The quota reserves each task atomically before the call, through `phil/usage-meter`'s `consume()`: its tokens on the
+  meter of tokens, its cost bound on the subject's budget and on the application's ceiling, and one task, all or
+  nothing. Tasks started at the same moment no longer all pass a check of the room left and go past the quota, the
+  budget or the ceiling together. After the call, the reservation is settled with what was spent — the surplus given
+  back, the excess recorded under the key `<id>:adjust` —, and a failed call or a stream left early gives all of it
+  back. Code that calls `Quota` itself, rather than through `AiTasks`, passes the cost bound to `admit()` and what it
+  reserved to `charge()`: `charge()` without them records everything spent on top of the reservation.
+
 ## 0.1.0-alpha - 2026-11-20
 
 ### Added
